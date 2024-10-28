@@ -26,3 +26,4 @@ go.work
 *.drawio
 /.idea/
 .idea
+node_modules
