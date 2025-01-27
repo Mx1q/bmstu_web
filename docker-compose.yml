@@ -1,0 +1,166 @@
+services:
+  saladsDB:
+    image: bitnami/postgresql:16
+    container_name: "postgres-master"
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRESQL_REPLICATION_MODE: master
+      POSTGRESQL_REPLICATION_USER: repl_user
+      POSTGRESQL_REPLICATION_PASSWORD: repl
+      POSTGRES_DB: salads
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - ./backend/internal/storage/postgres/initdb.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  postgres-slave:
+    image: bitnami/postgresql:16
+    container_name: "postgres-slave"
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRESQL_REPLICATION_MODE: slave
+      POSTGRESQL_REPLICATION_USER: repl_user
+      POSTGRESQL_REPLICATION_PASSWORD: repl
+      POSTGRES_DB: salads
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRESQL_MASTER_HOST: saladsDB
+      POSTGRESQL_MASTER_PORT_NUMBER: 5432
+      TZ: "Europe/Moscow"
+    volumes:
+      - ./backend/internal/storage/postgres/initdb.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      saladsDB:
+        condition: service_healthy
+
+  db:
+    image: bitnami/postgresql:16
+    container_name: "database"
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_DB: salads
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - ./backend/internal/storage/postgres/initdb.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    image: ppo_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/internal/config/config.yaml:/app/config.yaml
+    container_name: "backend"
+    ports:
+      - '8081:8081'
+    depends_on:
+      saladsDB:
+        condition: service_healthy
+
+  backend-2:
+    image: ppo_backend
+    container_name: "backend-2"
+    volumes:
+      - ./backend/internal/config/config-2.yaml:/app/config.yaml
+    ports:
+      - '8082:8081'
+    depends_on:
+      postgres-slave:
+        condition: service_healthy
+
+  backend-3:
+    image: ppo_backend
+    container_name: "backend-3"
+    volumes:
+      - ./backend/internal/config/config-3.yaml:/app/config.yaml
+    ports:
+      - '8083:8081'
+    depends_on:
+      postgres-slave:
+        condition: service_healthy
+
+  backend-mirror:
+    image: ppo_backend
+    volumes:
+      - ./backend/internal/config/config-4.yaml:/app/config.yaml
+    container_name: "backend-mirror"
+    ports:
+      - '8084:8081'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  swagger_api_v2:
+    image: swaggerapi/swagger-ui
+    container_name: "swagger_api_v2"
+    ports:
+      - '8000:8080'
+    volumes:
+      - ./backend/docs/swagger.yaml:/swagger.yaml
+    environment:
+      SWAGGER_JSON: /swagger.yaml
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:8.12
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@web.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    depends_on:
+      saladsDB:
+        condition: service_healthy
+
+  frontend_legacy:
+    image: ppo_frontend
+    build:
+      context: ./frontend/db_course
+      dockerfile: Dockerfile
+    container_name: frontend_legacy
+    ports:
+      - '8080:80'
+    environment:
+      - API_URL=http://localhost:8080/
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.27.2
+    ports:
+      - "80:80"
+    volumes:
+      - ./README.md:/usr/share/nginx/readme/README.md
+      #      - ./imgs:/usr/share/nginx/readme/imgs
+      - ./nginx/conf:/etc/nginx
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/logs:/etc/nginx/logs
+    restart: always
+
+  gatling-load-testing:
+    image: denvazh/gatling:3.2.1
+    container_name: gatling-load-testing
+    platform: linux/amd64
+    volumes:
+      - ./backend/load_testing/gatling/simulations:/opt/gatling/user-files/simulations
+      - ./backend/load_testing/gatling/results:/opt/gatling/results
+    entrypoint: [ "/bin/sh", "-c", "gatling.sh -s ServerPerSecondLoadSimulation" ]

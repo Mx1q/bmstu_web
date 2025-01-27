@@ -1,0 +1,1380 @@
+swagger: "2.0"
+info:
+  title: Cервис поиска рецептов салатов
+  description: Сервис призван помочь с поиском рецептов.
+  version: '1.0'
+host: localhost:8081
+paths:
+  /users/me/salads:
+    get:
+      security:
+          - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Получение списка салатов авторизованного пользователя
+      operationId: listUserSalads
+      parameters:
+        - name: page
+          in: query
+          type: integer
+          description: Page number
+          required: true
+        - name: minRate
+          in: query
+          type: number
+          description: Minimal rating (filter)
+          required: false
+        - name: ingredients
+          description: ID's of available ingredients
+          in: query
+          type: array 
+          items: 
+            type: string
+          required: false
+        - name: saladTypes
+          description: ID's of salad types to filter
+          in: query
+          type: array 
+          items: 
+            type: string
+          required: false
+        - name: onlyRated
+          description: show only rated salads
+          in: query
+          type: boolean
+          required: false
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.SaladsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  # /salads/userRated:
+  #   get:
+  #     security:
+  #         - BearerAuth: []
+  #     produces:
+  #       - application/json
+  #     tags:
+  #       - salads
+  #     summary: Получение списка салатов, которые оцененил пользователь
+  #     operationId: listUserRatedSalads
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         type: integer
+  #         description: Page number
+  #         required: true
+  #     responses:
+  #       '200':
+  #         description: OK
+  #         schema:
+  #           $ref: '#/definitions/v2.SaladsResponse'
+  #       '400':
+  #         description: Bad Request
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+  #       '401':
+  #         description: Unauthorized
+  #       '500':
+  #         description: Internal Server Error
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /salads:
+    get:
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Получение списка салатов
+      operationId: listSalads
+      parameters:
+        - name: page
+          in: query
+          type: integer
+          description: Page number
+          required: true
+        - name: minRate
+          in: query
+          type: number
+          description: Minimal rating (filter)
+          required: false
+        - name: ingredients
+          description: ID's of available ingredients
+          in: query
+          type: array 
+          items: 
+            type: string
+          required: false
+        - name: saladTypes
+          description: ID's of salad types to filter
+          in: query
+          type: array 
+          items: 
+            type: string
+          required: false
+        - name: status
+          in: query
+          type: integer
+          description: Status of salad
+          required: false
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.SaladsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Создание салата
+      operationId: createSalad
+      parameters:
+        - description: Salad data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Salad'
+      responses:
+        '200':
+            description: OK
+            schema:
+              $ref: '#/definitions/v2.SaladResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /salads/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Получение информации о салате
+      operationId: getSalad
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.SaladResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    delete:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Удаление информации о салате
+      operationId: deleteSalad
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    patch:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - salads
+      summary: Обновление информации о салате
+      operationId: updateSalad
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+        - description: Salad data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Salad'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  # /salads/userRated:
+  #   get:
+  #     security:
+  #         - BearerAuth: []
+  #     produces:
+  #       - application/json
+  #     tags:
+  #       - salads
+  #     summary: Получение списка салатов, которые оцененил пользователь
+  #     operationId: listUserRatedSalads
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         type: integer
+  #         description: Page number
+  #         required: true
+  #     responses:
+  #       '200':
+  #         description: OK
+  #         schema:
+  #           $ref: '#/definitions/v2.SaladsResponse'
+  #       '400':
+  #         description: Bad Request
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+  #       '401':
+  #         description: Unauthorized
+  #       '500':
+  #         description: Internal Server Error
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+
+  # /salads/status:
+  #   get:
+  #     security:
+  #         - BearerAuth: []
+  #     produces:
+  #       - application/json
+  #     tags:
+  #       - salads
+  #     summary: Получение списка салатов + фильтр по статусу
+  #     operationId: listSaladsByStatus
+  #     parameters:
+  #       - name: page
+  #         in: query
+  #         type: integer
+  #         description: Page number
+  #         required: true
+  #       - name: minRate
+  #         in: query
+  #         type: number
+  #         description: Minimal rating (filter)
+  #         required: false
+  #       - name: ingredients
+  #         description: ID's of available ingredients
+  #         in: query
+  #         type: array 
+  #         items: 
+  #           type: string
+  #         required: false
+  #       - name: saladTypes
+  #         description: ID's of salad types to filter
+  #         in: query
+  #         type: array 
+  #         items: 
+  #           type: string
+  #         required: false
+  #       - name: status
+  #         description: ID's of salad types to filter
+  #         in: query
+  #         type: integer
+  #         required: false
+  #     responses:
+  #       '200':
+  #         description: OK
+  #         schema:
+  #           $ref: '#/definitions/v2.SaladsResponse'
+  #       '400':
+  #         description: Bad Request
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+  #       '401':
+  #         description: Unauthorized
+  #       '403':
+  #         description: Forbidden
+  #       '500':
+  #         description: Internal Server Error
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /recipes/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - recipes
+      summary: Получение информации о рецепте
+      operationId: getRecipe
+      parameters:
+        - type: string
+          description: Recipe id
+          name: id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.RecipeResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    patch:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - recipes
+      summary: Обновление информации о рецепте
+      operationId: updateRecipe
+      parameters:
+        - type: string
+          description: Recipe id
+          name: id
+          in: path
+          required: true
+        - description: Salad data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Recipe'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /recipes:
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - recipes
+      summary: Создание рецепта
+      operationId: createRecipe
+      parameters:
+        - description: Recipe data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Recipe'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /recipeSteps/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - recipeSteps
+      summary: Получение шагов рецепта
+      operationId: listRecipeSteps
+      parameters:
+        - name: id
+          type: string
+          description: Recipe id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.StepsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    delete:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - recipeSteps
+      summary: Удаление шага рецепта
+      operationId: deleteStep
+      parameters:
+        - type: string
+          description: Recipe step id
+          name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    patch:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - recipeSteps
+      summary: Обновление информации о шаге рецепта
+      operationId: updateStep
+      parameters:
+        - type: string
+          description: Step id
+          name: id
+          in: path
+          required: true
+        - description: Step data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Step'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  /recipeSteps:          
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - recipeSteps
+      summary: Создание шага рецепта
+      operationId: createStep
+      parameters:
+        - description: Step data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Step'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /ingredients:
+    get:
+      produces:
+        - application/json
+      tags:
+        - ingredients
+      summary: Получение ингредиентов
+      operationId: listIngredients
+      parameters:
+        - name: page
+          in: query
+          type: integer
+          description: Page number
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.IngredientsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /ingredients/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - ingredients
+      summary: Получение ингредиентов, использующихся в рецепте
+      operationId: getRecipeIngredients
+      parameters:
+        - type: string
+          description: Recipe id
+          name: id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.RecipeIngredientsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /salads/{id}/ingredients:
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - ingredients
+      summary: Добавление ингредиента в рецепт
+      operationId: linkIngredient
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+        - description: Link data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.IngredientLink'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    delete:
+        security:
+          - BearerAuth: []
+        produces:
+          - application/json
+        tags:
+          - ingredients
+        summary: Удаление ингредиента из рецепта
+        operationId: unlinkIngredient
+        parameters:
+          - type: string
+            description: Salad id
+            name: id
+            in: path
+            required: true
+          - description: Link data
+            name: data
+            in: body
+            required: true
+            schema:
+              $ref: '#/definitions/web.IngredientLink'
+        responses:
+          '204':
+            description: No Content
+            schema:
+              $ref: '#/definitions/web.SuccessResponseStruct'
+          '400':
+            description: Bad Request
+            schema:
+              $ref: '#/definitions/web.ErrorResponseStruct'
+          '401':
+            description: Unauthorized
+          '403':
+            description: Forbidden
+          '500':
+            description: Internal Server Error
+            schema:
+              $ref: '#/definitions/web.ErrorResponseStruct'
+      
+  /types:
+    get:
+      produces:
+        - application/json
+      tags:
+        - saladTypes
+      summary: Получение типов салатов
+      operationId: listSaladTypes
+      parameters:
+        - name: page
+          in: query
+          type: integer
+          description: Page number
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.SaladTypesResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /types/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - saladTypes
+      summary: Получение типов салата
+      operationId: getSaladTypes
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.SaladTypesResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /salads/{id}/types:
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - saladTypes
+      summary: Добавление типа салата
+      operationId: linkSaladType
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+        - description: Link data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.SaladTypeLink'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    delete:
+        security:
+          - BearerAuth: []
+        produces:
+          - application/json
+        tags:
+          - saladTypes
+        summary: Удаление привязки типа к салату
+        operationId: unlinkSaladType
+        parameters:
+          - type: string
+            description: Salad id
+            name: id
+            in: path
+            required: true
+          - description: Link data
+            name: data
+            in: body
+            required: true
+            schema:
+              $ref: '#/definitions/web.SaladTypeLink'
+        responses:
+          '204':
+            description: No Content
+            schema:
+              $ref: '#/definitions/web.SuccessResponseStruct'
+          '400':
+            description: Bad Request
+            schema:
+              $ref: '#/definitions/web.ErrorResponseStruct'
+          '401':
+            description: Unauthorized
+          '403':
+            description: Forbidden
+          '500':
+            description: Internal Server Error
+            schema:
+              $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /measurements:
+    get:
+      produces:
+        - application/json
+      tags:
+        - measurements
+      summary: Получение списка едениц измерения
+      operationId: listMeasurements
+      # parameters:
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.MeasurementsResponse'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  /measurements/{id}:
+    get:
+      produces:
+        - application/json
+      tags:
+        - measurements
+      summary: Получение еденицы измерения ингредиента
+      operationId: getMeasurement
+      parameters:
+        - type: string
+          description: Recipe id
+          name: id
+          in: path
+          required: true
+        - name: ingredientId
+          in: query
+          type: string
+          description: Ingredient id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Measurement'
+        '400':
+            description: Bad Request
+            schema:
+              $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  /salads/{id}/comments:
+    get:
+      produces:
+        - application/json
+      tags:
+        - comments
+      summary: Получение комментариев к салату
+      operationId: listComments
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+        - name: page
+          in: query
+          type: integer
+          description: Page number
+          required: true
+        - name: userId
+          in: query
+          type: string
+          description: Page number
+          required: false
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/v2.CommentsResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    post:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - comments
+      summary: Создание комментария
+      operationId: createComment
+      parameters:
+        - type: string
+          description: Salad id
+          name: id
+          in: path
+          required: true
+        - description: Comment data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Comment'
+      responses:
+        '200':
+            description: OK
+            schema:
+              $ref: '#/definitions/v2.SaladResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /comments/{id}:
+    delete:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - comments
+      summary: Удаление комментария
+      operationId: deleteComment
+      parameters:
+        - type: string
+          description: Comment id
+          name: id
+          in: path
+          required: true
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+    patch:
+      security:
+        - BearerAuth: []
+      produces:
+        - application/json
+      tags:
+        - comments
+      summary: Обновление коментария
+      operationId: updateComment
+      parameters:
+        - type: string
+          description: Comment id
+          name: id
+          in: path
+          required: true
+        - description: Comment data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.Comment'
+      responses:
+        '204':
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+            
+  # /comments/userSalad:
+  #   get:
+  #     produces:
+  #       - application/json
+  #     tags:
+  #       - comments
+  #     summary: Получение комментария пользователя к салату
+  #     operationId: getUserComment
+  #     parameters:
+  #       - name: userId
+  #         in: query
+  #         type: string
+  #         description: Page number
+  #         required: true
+  #       - name: saladId
+  #         in: query
+  #         type: string
+  #         description: salad id
+  #         required: true
+  #     responses:
+  #       '200':
+  #         description: OK
+  #         schema:
+  #           $ref: '#/definitions/web.Comment'
+  #       '400':
+  #         description: Bad Request
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+  #       '500':
+  #         description: Internal Server Error
+  #         schema:
+  #           $ref: '#/definitions/web.ErrorResponseStruct'
+
+  /login:
+    post:
+      tags: 
+          - users
+      summary: Аутентификация
+      description: Метод для получения bearer-токена
+      produces:
+        - application/json
+      operationId: login
+      parameters:
+        - description: Login data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.LoginReq'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+  /signup:
+    post:
+      tags:
+          - users
+      summary: Регистрация
+      description: Метод для регистрации
+      produces:
+        - application/json
+      operationId: signup
+      parameters:
+        - description: Signup data
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/web.RegisterReq'
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/web.SuccessResponseStruct'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/web.ErrorResponseStruct'
+
+definitions:
+  v2.SaladResponse:
+    type: object
+    properties:
+      salad:
+        $ref: '#/definitions/web.Salad'
+  v2.SaladsResponse:
+    type: object
+    properties:
+      salads:
+        type: array
+        items:
+          $ref: '#/definitions/web.Salad'
+      numPages:
+        type: integer
+        
+  v2.RecipeResponse:
+    type: object
+    properties:
+      recipe:
+        $ref: '#/definitions/web.Recipe'
+        
+  v2.StepsResponse:
+    type: object
+    properties:
+      salads:
+        type: array
+        items:
+          $ref: '#/definitions/web.Step'
+          
+  v2.IngredientsResponse:
+    type: object
+    properties:
+      ingredients:
+        type: array
+        items:
+          $ref: '#/definitions/web.Ingredient'
+      numPages:
+        type: integer
+        
+  v2.RecipeIngredientsResponse:
+    type: object
+    properties:
+      ingredients:
+        type: array
+        items:
+          $ref: '#/definitions/web.Ingredient'
+          
+  v2.SaladTypesResponse:
+    type: object
+    properties:
+      types:
+        type: array
+        items:
+          $ref: '#/definitions/web.SaladType'
+          
+  v2.MeasurementsResponse:
+    type: object
+    properties:
+      types:
+        type: array
+        items:
+          $ref: '#/definitions/web.Measurement'
+          
+  v2.CommentsResponse:
+    type: object
+    properties:
+      comments:
+        type: array
+        items:
+          $ref: '#/definitions/web.Comment'
+      numPages:
+        type: integer
+        
+  web.Salad:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      author_id:
+        type: string
+        
+  web.Recipe:
+    type: object
+    properties:
+      id:
+        type: string
+      salad_id:
+        type: string
+      status:
+        type: integer
+      number_of_servings:
+        type: integer
+      time_to_cook:
+        type: integer
+      rating:
+        type: number
+        
+  web.Step:
+    type: object
+    properties:
+      id:
+        type: string
+      recipe_id:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      step_num:
+        type: integer
+        
+  web.Ingredient:
+    type: object
+    properties:
+      id:
+        type: string
+      type_id:
+        type: string
+      name:
+        type: string
+      calories:
+        type: integer
+        
+  web.IngredientLink:
+    type: object
+    properties:
+      recipe_id:
+        type: string
+      salad_id:
+        type: string
+      ingredient_id:
+        type: string
+      measurement_id:
+        type: string
+      amount:
+        type: integer
+        
+  web.SaladType:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+        
+  web.SaladTypeLink:
+    type: object
+    properties:
+      salad_id:
+        type: string
+      type_id:
+        type: string
+        
+  web.Measurement:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      grams:
+        type: integer
+        
+  web.Comment:
+    type: object
+    properties:
+      id:
+        type: string
+      salad_id:
+        type: string
+      author_id:
+        type: string
+      text:
+        type: string
+      rating:
+        type: number
+    
+        
+  web.SuccessResponseStruct:
+    type: object
+    properties:
+      status:
+          type: string
+      data: {}
+  web.ErrorResponseStruct:
+    type: object
+    properties:
+      status:
+          type: string
+      error:
+        type: string
+  
+  web.LoginReq:
+    type: object
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+        
+  web.RegisterReq:
+    type: object
+    properties:
+      name:
+        type: string
+      username:
+        type: string
+      password:
+        type: string
+      email:
+        type: string
+        
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
